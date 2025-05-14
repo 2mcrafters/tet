@@ -1,6 +1,6 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import BulkAddDepartmentForm from '../components/forms/BulkAddDepartmentForm';
+import BulkAddDepartmentForm from '../Components/forms/BulkAddDepartmentForm';
 
 const BulkAddDepartmentPage = () => {
   const navigate = useNavigate();
@@ -30,4 +30,4 @@ const BulkAddDepartmentPage = () => {
   );
 };
 
-export default BulkAddDepartmentPage; 
+export default BulkAddDepartmentPage;

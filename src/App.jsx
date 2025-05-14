@@ -21,8 +21,6 @@ import NotFound from './Pages/NotFound'
 import SocietesListPage from './Pages/SocietesListPage'; // Ajout de l'import pour la page des sociétés
 import TemporaireEmployesPage from './Pages/TemporaireEmployesPage'; // Ajout de l'import pour la page des sociétés
 
-
-
 //fetch slices
 import { useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
@@ -51,9 +49,6 @@ function App() {
     }
   }, [auth.isSuccess, auth.token, dispatch]);
   
-
-
-
   return (
     <AuthProvider>
       <Routes>
@@ -80,8 +75,6 @@ function App() {
           <Route path="/departments" element={<DepartmentsListPage />} />
           <Route path="/departments/add" element={<BulkAddDepartmentPage />} />
           <Route path="/departments/:id/edit" element={<EditDepartmentPage />} />
-          
-     
           
           {/* Absence request routes */}
           <Route path="/absences" element={<AbsenceRequestsListPage />} />
