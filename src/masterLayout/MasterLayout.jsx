@@ -1,3 +1,4 @@
+/* eslint-disable react/prop-types */
 import { useEffect, useState } from "react";
 import { Icon } from "@iconify/react/dist/iconify.js";
 import { Link, NavLink, useLocation, Outlet, useNavigate } from "react-router-dom";
@@ -5,16 +6,16 @@ import ThemeToggleButton from "../helper/ThemeToggleButton";
 import { useDispatch } from "react-redux";
 import { logout } from "../Redux/Slices/authSlice";
 import { useSelector } from "react-redux";
-import "./MasterLayout.css";
 
-const MasterLayout = () => {
+
+const MasterLayout = ({ children }) => {
   const roles = useSelector((state) => state.auth.roles || []);
-  const user = useSelector((state) => state.auth.user);
-  const apiUrl = import.meta.env.VITE_API_URL;
+const user = useSelector((state)=>state.auth.user)
+const apiUrl = import.meta.env.VITE_API_URL;
 
-  const [sidebarActive, setSidebarActive] = useState(false);
-  const [mobileMenu, setMobileMenu] = useState(false);
-  const location = useLocation();
+  let [sidebarActive, seSidebarActive] = useState(false);
+  let [mobileMenu, setMobileMenu] = useState(false);
+  const location = useLocation(); // Hook to get the current route
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const [imagePreview, setImagePreview] = useState(
@@ -22,7 +23,6 @@ const MasterLayout = () => {
       ? `${apiUrl}storage/profile_picture/${user.picture}`
       : "assets/images/user-grid/user-grid-img13.png"
   );
-
   useEffect(() => {
     const handleDropdownClick = (event) => {
       event.preventDefault();
@@ -32,19 +32,28 @@ const MasterLayout = () => {
       if (!clickedDropdown) return;
 
       const isActive = clickedDropdown.classList.contains("open");
-      document.querySelectorAll(".sidebar-menu .dropdown").forEach((dropdown) => {
+
+      // Close all dropdowns
+      const allDropdowns = document.querySelectorAll(".sidebar-menu .dropdown");
+      allDropdowns.forEach((dropdown) => {
         dropdown.classList.remove("open");
         const submenu = dropdown.querySelector(".sidebar-submenu");
-        if (submenu) submenu.style.maxHeight = "0px";
+        if (submenu) {
+          submenu.style.maxHeight = "0px"; // Collapse submenu
+        }
       });
 
-      if (!isActive && clickedDropdown) {
+      // Toggle the clicked dropdown
+      if (!isActive) {
         clickedDropdown.classList.add("open");
         const submenu = clickedDropdown.querySelector(".sidebar-submenu");
-        if (submenu) submenu.style.maxHeight = `${submenu.scrollHeight}px`;
+        if (submenu) {
+          submenu.style.maxHeight = `${submenu.scrollHeight}px`; // Expand submenu
+        }
       }
     };
 
+    // Attach click event listeners to all dropdown triggers
     const dropdownTriggers = document.querySelectorAll(
       ".sidebar-menu .dropdown > a, .sidebar-menu .dropdown > Link"
     );
@@ -54,7 +63,8 @@ const MasterLayout = () => {
     });
 
     const openActiveDropdown = () => {
-      document.querySelectorAll(".sidebar-menu .dropdown").forEach((dropdown) => {
+      const allDropdowns = document.querySelectorAll(".sidebar-menu .dropdown");
+      allDropdowns.forEach((dropdown) => {
         const submenuLinks = dropdown.querySelectorAll(".sidebar-submenu li a");
         submenuLinks.forEach((link) => {
           if (
@@ -63,14 +73,18 @@ const MasterLayout = () => {
           ) {
             dropdown.classList.add("open");
             const submenu = dropdown.querySelector(".sidebar-submenu");
-            if (submenu) submenu.style.maxHeight = `${submenu.scrollHeight}px`;
+            if (submenu) {
+              submenu.style.maxHeight = `${submenu.scrollHeight}px`; // Expand submenu
+            }
           }
         });
       });
     };
 
+    // Open the submenu that contains the active route
     openActiveDropdown();
 
+    // Cleanup event listeners on unmount
     return () => {
       dropdownTriggers.forEach((trigger) => {
         trigger.removeEventListener("click", handleDropdownClick);
@@ -78,14 +92,12 @@ const MasterLayout = () => {
     };
   }, [location.pathname]);
 
-  const handleSidebarToggle = () => {
-    setSidebarActive(!sidebarActive);
-    setMobileMenu(false);
+  let sidebarControl = () => {
+    seSidebarActive(!sidebarActive);
   };
 
-  const handleMobileMenuToggle = () => {
+  let mobileMenuControl = () => {
     setMobileMenu(!mobileMenu);
-    setSidebarActive(false);
   };
 
   const handleLogout = async () => {
@@ -98,229 +110,292 @@ const MasterLayout = () => {
   };
 
   return (
-    <div className={`layout-wrapper ${mobileMenu ? "overlay active" : "overlay"}`}>
-      <aside className={`sidebar ${sidebarActive || mobileMenu ? "active" : ""}`}>
+    <section className={mobileMenu ? "overlay active" : "overlay "}>
+      {/* sidebar */}
+      <aside
+        className={
+          sidebarActive
+            ? "sidebar active "
+            : mobileMenu
+            ? "sidebar sidebar-open"
+            : "sidebar"
+        }
+      >
         <button
-          onClick={handleMobileMenuToggle}
-          type="button"
-          className="sidebar-close-btn"
+          onClick={mobileMenuControl}
+          type='button'
+          className='sidebar-close-btn'
         >
-          <Icon icon="radix-icons:cross-2" />
+          <Icon icon='radix-icons:cross-2' />
         </button>
+        <div>
+          <Link to='/' className='sidebar-logo'>
+            <img
+              src='assets/images/logo.png'
+              alt='site logo'
+              className='light-logo'
+            />
+            <img
+              src='assets/images/logo-light.png'
+              alt='site logo'
+              className='dark-logo'
+            />
+            <img
+              src='assets/images/logo-icon.png'
+              alt='site logo'
+              className='logo-icon'
+            />
+          </Link>
+        </div>
+        <div className='sidebar-menu-area'>
+        <ul className="sidebar-menu" id="sidebar-menu">
 
-        <Link to="/" className="sidebar-logo">
-          <img
-            src="assets/images/logo.png"
-            alt="site logo"
-            className="light-logo"
-          />
-          <img
-            src="assets/images/logo-light.png"
-            alt="site logo"
-            className="dark-logo"
-          />
-        </Link>
+  {/* Tableau de bord - Pour tous */}
+  <li>
+    <NavLink to="/" className={(navData) => navData.isActive ? "active-page" : ""}>
+      <Icon icon="solar:home-smile-angle-outline" className="menu-icon" />
+      <span>Tableau de bord</span>
+                </NavLink>
+              </li>
 
-        <nav className="sidebar-menu-area">
-          <ul className="sidebar-menu">
-            <li>
-              <NavLink to="/" className={({ isActive }) => isActive ? "active" : ""}>
-                <Icon icon="solar:home-smile-angle-outline" className="icon" />
-                <span>Tableau de bord</span>
-              </NavLink>
-            </li>
-
-            {(roles.includes("RH") || roles.includes("Chef_Dep") || roles.includes("Chef_Projet")) && (
-              <li className="dropdown">
-                <Link to="#">
-                  <Icon icon="mdi:account-group-outline" className="icon" />
-                  <span>Employés</span>
-                </Link>
-                <ul className="sidebar-submenu">
-                  <li>
-                    <NavLink to="/users">
-                      <Icon icon="mdi:format-list-bulleted" className="icon" />
-                      Liste des employés
+  {/* Gestion des employés - RH & Chef_Dep */}
+  {(roles.includes("RH") || roles.includes("Chef_Dep") || roles.includes("Chef_Projet")) && (
+    <li className="dropdown">
+      <Link to="#">
+        <Icon icon="mdi:account-group-outline" className="menu-icon" />
+        <span> Employés</span>
+      </Link>
+      <ul className="sidebar-submenu">
+      <li>
+          <NavLink to="/users" className={(navData) => navData.isActive ? "active-page" : ""}>
+            <Icon icon="mdi:format-list-bulleted" className="circle-icon w-auto" />
+            Liste des employés
                     </NavLink>
                   </li>
+
                   <li>
-                    <NavLink to="/users/temp">
-                      <Icon icon="mdi:format-list-bulleted" className="icon" />
-                      Employés Temporaires
+          <NavLink to="/users/temp" className={(navData) => navData.isActive ? "active-page" : ""}>
+            <Icon icon="mdi:format-list-bulleted" className="circle-icon w-auto" />
+            Les employés Temporaire
                     </NavLink>
                   </li>
-                  <li>
-                    <NavLink to="/users/add">
-                      <Icon icon="mdi:account-plus-outline" className="icon" />
-                      Ajouter un employé
-                    </NavLink>
-                  </li>
+        <li>
+          <NavLink to="/users/add" className={(navData) => navData.isActive ? "active-page" : ""}>
+            <Icon icon="mdi:account-plus-outline" className="circle-icon w-auto" />
+            Ajouter les employés
+          </NavLink>
+        </li>
+        
                 </ul>
               </li>
-            )}
+  )}
 
-            {roles.includes("RH") && (
-              <>
-                <li className="dropdown">
-                  <Link to="#">
-                    <Icon icon="fluent:building-people-24-regular" className="icon" />
-                    <span>Départements</span>
-                  </Link>
-                  <ul className="sidebar-submenu">
-                    <li>
-                      <NavLink to="/departments">
-                        <Icon icon="mdi:format-list-bulleted-type" className="icon" />
-                        Liste des départements
-                      </NavLink>
-                    </li>
-                    <li>
-                      <NavLink to="/departments/add">
-                        <Icon icon="mdi:plus-box-outline" className="icon" />
-                        Créer un département
-                      </NavLink>
-                    </li>
-                  </ul>
-                </li>
-                <li className="dropdown">
-                  <Link to="#">
-                    <Icon icon="fluent:building-people-24-regular" className="icon" />
-                    <span>Sociétés</span>
-                  </Link>
-                  <ul className="sidebar-submenu">
-                    <li>
-                      <NavLink to="/societes">
-                        <Icon icon="mdi:format-list-bulleted-type" className="icon" />
-                        Liste des sociétés
-                      </NavLink>
-                    </li>
-                  </ul>
-                </li>
-              </>
-            )}
-
-            <li className="dropdown">
-              <Link to="#">
-                <Icon icon="mdi:calendar-account-outline" className="icon" />
-                <span>Absences</span>
-              </Link>
-              <ul className="sidebar-submenu">
-                {(roles.includes("RH") || roles.includes("Chef_Dep") || roles.includes("Chef_Projet")) && (
-                  <li>
-                    <NavLink to="/absences">
-                      <Icon icon="mdi:clipboard-list-outline" className="icon" />
-                      Liste des demandes
+  {/* Gestion des départements - RH uniquement */}
+  {roles.includes("RH") && (
+    <>
+    <li className="dropdown">
+      <Link to="#" >
+        <Icon icon="fluent:building-people-24-regular" className="menu-icon" />
+        <span>Départements</span>
+      </Link>
+      <ul className="sidebar-submenu"> <li>
+          <NavLink to="/departments" className={(navData) => navData.isActive ? "active-page" : ""}>
+            <Icon icon="mdi:format-list-bulleted-type" className="circle-icon w-auto" />
+            Liste des départements
                     </NavLink>
                   </li>
-                )}
-                <li>
-                  <NavLink to="/absences/add">
-                    <Icon icon="mdi:calendar-plus-outline" className="icon" />
-                    Nouvelle demande
-                  </NavLink>
-                </li>
-              </ul>
-            </li>
+        <li>
+          <NavLink to="/departments/add" className={(navData) => navData.isActive ? "active-page" : ""}>
+            <Icon icon="mdi:plus-box-outline" className="circle-icon w-auto" />
+            Créer un département
+                    </NavLink>
+                  </li>
+                 
+                </ul>
+              </li>
+               <li className="dropdown">
+               <Link to="#" >
+                 <Icon icon="fluent:building-people-24-regular" className="menu-icon" />
+                 <span>Societes</span>
+               </Link>
+               <ul className="sidebar-submenu"> <li>
+                   <NavLink to="/societes" className={(navData) => navData.isActive ? "active-page" : ""}>
+                     <Icon icon="mdi:format-list-bulleted-type" className="circle-icon w-auto" />
+                     Liste des Societess
+                             </NavLink>
+                           </li>
+                 <li>
+                   <NavLink to="/departments/add" className={(navData) => navData.isActive ? "active-page" : ""}>
+                     <Icon icon="mdi:plus-box-outline" className="circle-icon w-auto" />
+                     Créer un département
+                             </NavLink>
+                           </li>
+                          
+                         </ul>
+                       </li></>
+  )}
 
-            <li>
-              <NavLink to="/pointages">
-                <Icon icon="mdi:clock-outline" className="icon" />
-                <span>Pointages</span>
-              </NavLink>
-            </li>
-
-            <li className="dropdown">
-              <Link to="#">
-                <Icon icon="mdi:chart-box-outline" className="icon" />
-                <span>Reporting</span>
+  {/* Demande d'absences - Tous */}
+  <li className="dropdown">
+    <Link to="#">
+      <Icon icon="mdi:calendar-account-outline" className="menu-icon" />
+      <span>Demande d'absences</span>
               </Link>
-              <ul className="sidebar-submenu">
-                <li>
-                  <NavLink to="/statistiques">
-                    <Icon icon="mdi:chart-bar-stacked" className="icon" />
-                    Statistiques
+    <ul className="sidebar-submenu">
+      {(roles.includes("RH") || roles.includes("Chef_Dep") || roles.includes("Chef_Projet")) && (
+        <li>
+          <NavLink to="/absences" className={(navData) => navData.isActive ? "active-page" : ""}>
+            <Icon icon="mdi:clipboard-list-outline" className="circle-icon w-auto" />
+            Liste des demandes
+                  </NavLink>
+                </li>
+      )}
+      <li>
+        <NavLink to="absences/add" className={(navData) => navData.isActive ? "active-page" : ""}>
+          <Icon icon="mdi:calendar-plus-outline" className="circle-icon w-auto" />
+          Ajouter une demande
                   </NavLink>
                 </li>
               </ul>
             </li>
-          </ul>
-        </nav>
+
+  {/* Pointage */}
+  <li>
+  <NavLink to="/pointages" className={(navData) => navData.isActive ? "active-page" : ""}>
+    <Icon icon="mdi:clock-outline" className="menu-icon" />
+    <span>Pointages</span>
+  </NavLink>
+</li>
+
+
+  {/* Reporting */}
+  <li className="dropdown">
+    <Link to="#">
+      <Icon icon="mdi:chart-box-outline" className="menu-icon" />
+      <span>Reporting</span>
+              </Link>
+    <ul className="sidebar-submenu">
+    
+                <li>
+        <NavLink to="/statistiques" className={(navData) => navData.isActive ? "active-page" : ""}>
+          <Icon icon="mdi:chart-bar-stacked" className="circle-icon w-auto" />
+          Statistiques
+                  </NavLink>
+                </li>
+              </ul>
+            </li>
+</ul>
+        </div>
       </aside>
 
-      <main className={`dashboard-main ${sidebarActive ? "active" : ""}`}>
-        <header className="navbar-header">
-          <div className="d-flex align-items-center justify-content-between">
-            <div className="d-flex align-items-center gap-4">
-              <button
-                type="button"
-                className="sidebar-toggle"
-                onClick={handleSidebarToggle}
-              >
-                <Icon
-                  icon={sidebarActive ? "iconoir:arrow-right" : "heroicons:bars-3-solid"}
-                  className="icon"
-                />
-              </button>
-
-              <button
-                onClick={handleMobileMenuToggle}
-                type="button"
-                className="sidebar-mobile-toggle d-lg-none"
-              >
-                <Icon icon="heroicons:bars-3-solid" className="icon" />
-              </button>
-
-              <form className="navbar-search d-none d-md-block">
-                <input type="text" name="search" placeholder="Rechercher..." />
-                <Icon icon="ion:search-outline" className="icon" />
-              </form>
-            </div>
-
-            <div className="d-flex align-items-center gap-3">
-              <div className="d-none d-lg-block">
-                <ThemeToggleButton />
-              </div>
-
-              <div className="dropdown">
-                <button
-                  className="user-dropdown-toggle"
-                  type="button"
-                  data-bs-toggle="dropdown"
+      <main
+        className={sidebarActive ? "dashboard-main active" : "dashboard-main"}
+      >
+        <div className='navbar-header'>
+          <div className='row align-items-center justify-content-between'>
+            <div className='col-auto'>
+              <div className='d-flex flex-wrap align-items-center gap-4'>
+                <button 
+                  type='button'
+                  className='sidebar-toggle'
+                  onClick={sidebarControl}
                 >
-                  <img
-                    src={imagePreview}
-                    alt="Profile"
-                    className="user-avatar"
-                  />
+                  {sidebarActive ? (
+                <Icon
+                      icon='iconoir:arrow-right'
+                      className='icon text-2xl non-active'
+                    />
+                  ) : (
+                    <Icon
+                      icon='heroicons:bars-3-solid'
+                      className='icon text-2xl non-active '
+                    />
+                  )}
                 </button>
-                <div className="dropdown-menu">
-                  <div className="user-info">
-                    <h6>{user.name} {user.prenom}</h6>
-                    <span>{user.role}</span>
-                  </div>
-                  <div className="dropdown-divider"></div>
-                  <Link to="/view-profile" className="dropdown-item">
-                    <Icon icon="heroicons:user" className="icon" />
-                    Mon profil
-                  </Link>
-                  <button onClick={handleLogout} className="dropdown-item text-danger">
-                    <Icon icon="heroicons:logout" className="icon" />
-                    Déconnexion
-                  </button>
+                <button
+                  onClick={mobileMenuControl}
+                  type='button'
+                  className='sidebar-mobile-toggle'
+                >
+                  <Icon icon='heroicons:bars-3-solid' className='icon' />
+                </button>
+                <form className='navbar-search'>
+                  <input type='text' name='search' placeholder='Search' />
+                  <Icon icon='ion:search-outline' className='icon' />
+                </form>
+              </div>
+            </div>
+            <div className='col-auto'>
+              <div  className='  d-flex flex-wrap align-items-center gap-3'>
+                {/* ThemeToggleButton */}
+                <div className="d-none">
+                <ThemeToggleButton/>
                 </div>
+              
+                {/* Notification dropdown end */}
+                <div className='dropdown'>
+                  <button
+                    className='d-flex justify-content-center align-items-center rounded-circle'
+                    type='button'
+                    data-bs-toggle='dropdown'
+                  >
+                    <img
+                      src={imagePreview}
+                      alt='image_user'
+                      className='w-40-px h-40-px object-fit-cover rounded-circle'
+                    />
+                  </button>
+                  <div className='dropdown-menu to-top dropdown-menu-sm'>
+                    <div className='py-12 px-16 radius-8 bg-primary-50 mb-16 d-flex align-items-center justify-content-between gap-2'>
+                      <Link to="/view-profile">
+                        <h6 className='text-lg text-primary-light fw-semibold mb-2'>
+                          {user.name +" "+ user.prenom}
+                        </h6>
+                        <span className='text-secondary-light fw-medium text-sm'>
+                        {user.role}
+                        </span>
+                      </Link>
+                      <button type='button' className='hover-text-danger'>
+                <Icon
+                          icon='radix-icons:cross-1'
+                          className='icon text-xl'
+                        />
+                      </button>
+                    </div>
+                    <ul className='to-top-list'>
+                 
+                <li>
+                        <Link
+                          className='dropdown-item text-black px-0 py-8 hover-bg-transparent hover-text-danger d-flex align-items-center gap-3'
+                          to='#'
+                          onClick={handleLogout}
+                        >
+                          <Icon icon='lucide:power' className='icon text-xl' />{" "}
+                          Log Out
+                        </Link>
+            </li>
+          </ul>
+        </div>
+                </div>
+                {/* Profile dropdown end */}
               </div>
             </div>
           </div>
-        </header>
-
-        <div className="dashboard-content">
-          <Outlet />
         </div>
 
-        <footer className="dashboard-footer">
-          <p>&copy; {new Date().getFullYear()} {import.meta.env.VITE_APP_NAME}. Tous droits réservés.</p>
+        {/* dashboard-main-body */}
+        <div className='dashboard-main-body'>
+          <Outlet />
+        </div>
+        
+
+
+        {/* Footer section */}
+        <footer className='d-footer'>
+          
         </footer>
       </main>
-    </div>
+    </section>
   );
 };
 

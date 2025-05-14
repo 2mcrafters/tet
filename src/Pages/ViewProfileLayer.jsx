@@ -2,8 +2,8 @@ import { Icon } from "@iconify/react/dist/iconify.js";
 import { useState, useEffect } from "react";
 import { useSelector, useDispatch } from 'react-redux';
 import { updateUser } from '../Redux/Slices/userSlice'; 
-import { fetchSocietes } from "../Redux/Slices/societeSlice";
-import { fetchDepartments } from "../Redux/Slices/departementSlice";
+import { fetchSocietes } from "../Redux/Slices/societeSlice"; // Ajouter l'importation pour fetchSocietes
+import { fetchDepartments } from "../Redux/Slices/departementSlice"; // Assurez-vous que fetchDepartments est importé si ce n'est pas déjà le cas
 
 const ViewProfileLayer = () => {
   const apiUrl = import.meta.env.VITE_API_URL;
@@ -11,46 +11,34 @@ const ViewProfileLayer = () => {
   const { user } = useSelector((state) => state.auth);
   const { status, error } = useSelector((state) => state.users);
   const { items: departments } = useSelector((state) => state.departments);
-  const { items: societes } = useSelector(state => state.societes);
+  const { items: societes } = useSelector(state => state.societes); // Récupérer les sociétés
 
   const getDepartmentName = (id) => {
     const dept = departments.find((d) => d.id === id);
     return dept ? dept.nom : "Département inconnu";
   };
 
-  const getSocieteName = (id) => {
+  const getSocieteName = (id) => { // Fonction pour obtenir le nom de la société
     const soc = societes.find((s) => s.id === id);
     return soc ? soc.nom : "Société inconnue";
   };
 
-  // Initialize formData with empty values
-  const [formData, setFormData] = useState({
-    name: '',
-    prenom: '',
-    email: '',
-    tel: '',
-    departement_id: '',
-    statut: '',
-    date_naissance: '',
-    rib: '',
-    cin: '',
-    situationFamiliale: '',
-    nbEnfants: 0,
-    adresse: '',
-    typeContrat: '',
-    role: '',
-    societe_id: ''
-  });
-
-  // Initialize imagePreview with a default value
-  const [imagePreview, setImagePreview] = useState("assets/images/user-grid/user-grid-img13.png");
-
-  useEffect(() => {
-    if (user?.picture) {
-      setImagePreview(`${apiUrl}storage/profile_picture/${user.picture}`);
-    }
-  }, [user, apiUrl]);
-
+  // État local pour le formulaire
+  const [formData, setFormData] = useState({});
+  const [imagePreview, setImagePreview] = useState(
+    useEffect(() => {
+      if (user?.picture) {
+        setImagePreview(`${apiUrl}storage/profile_picture/${user.picture}`);
+      } else {
+        setImagePreview("assets/images/user-grid/user-grid-img13.png");
+      }
+      console.log(imagePreview);
+    }, [user])
+    
+  );
+  
+ 
+  
   const [passwordVisible, setPasswordVisible] = useState(false);
   const [confirmPasswordVisible, setConfirmPasswordVisible] = useState(false);
   const [profilePicture, setProfilePicture] = useState(null);
@@ -59,10 +47,10 @@ const ViewProfileLayer = () => {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [passwordError, setPasswordError] = useState("");
 
-  // Initialize formData with user data when available
+  // Initialiser le formulaire avec les données utilisateur
   useEffect(() => {
-    dispatch(fetchSocietes());
-    dispatch(fetchDepartments());
+    dispatch(fetchSocietes()); // Dispatch pour récupérer les sociétés
+    dispatch(fetchDepartments()); // Dispatch pour récupérer les départements
     if (user) {
       setFormData({
         name: user.name || '',
@@ -79,11 +67,12 @@ const ViewProfileLayer = () => {
         adresse: user.adresse || '',
         typeContrat: user.typeContrat || '',
         role: user.role || '',
-        societe_id: user.societe_id || ''
+        societe_id: user.societe_id || '' // Ajouter societe_id
       });
     }
   }, [user, dispatch]);
 
+  // Gestion des changements dans le formulaire
   const handleInputChange = (e) => {
     const { id, value } = e.target;
     setFormData({
@@ -92,6 +81,7 @@ const ViewProfileLayer = () => {
     });
   };
 
+  // Toggle function for password field
   const togglePasswordVisibility = () => {
     setPasswordVisible(!passwordVisible);
   };
@@ -100,6 +90,7 @@ const ViewProfileLayer = () => {
     setConfirmPasswordVisible(!confirmPasswordVisible);
   };
 
+  // Gestion de l'upload d'image
   const readURL = (input) => {
     if (input.target.files && input.target.files[0]) {
       const file = input.target.files[0];
@@ -113,18 +104,22 @@ const ViewProfileLayer = () => {
     }
   };
 
+  // Soumission du formulaire de profil
   const handleSubmit = (e) => {
     e.preventDefault();
     
+    // Préparer les données pour la mise à jour
     const updateData = {
       id: user.id,
       ...formData
     };
     
+    // Ajouter l'image si elle a été modifiée
     if (profilePicture) {
       updateData.picture = profilePicture;
     }
     
+    // Dispatcher l'action de mise à jour
     dispatch(updateUser(updateData))
       .unwrap()
       .then(() => {
@@ -136,9 +131,11 @@ const ViewProfileLayer = () => {
       });
   };
 
+  // Soumission du formulaire de mot de passe
   const handlePasswordChange = (e) => {
     e.preventDefault();
     
+    // Validation des mots de passe
     if (newPassword !== confirmPassword) {
       setPasswordError("Les mots de passe ne correspondent pas");
       return;
@@ -149,13 +146,16 @@ const ViewProfileLayer = () => {
       return;
     }
     
+    // Réinitialiser l'erreur
     setPasswordError("");
     
+    // Préparer les données pour la mise à jour
     const updateData = {
       id: user.id,
       password: newPassword
     };
     
+    // Dispatcher l'action de mise à jour
     dispatch(updateUser(updateData))
       .unwrap()
       .then(() => {
@@ -388,7 +388,8 @@ const ViewProfileLayer = () => {
                       <div
                         id='imagePreview'
                         style={{
-                          backgroundImage: `url(${imagePreview})`,
+                          // backgroundImage: `url(${imagePreview})`,
+                          backgroundImage: imagePreview ? `url(${imagePreview})` : "none",
                           backgroundSize: "cover",
                           backgroundPosition: "center",
                         }}
