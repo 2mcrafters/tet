@@ -1,79 +1,42 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { Link, useNavigate } from 'react-router-dom';
-import { fetchDepartments, deleteDepartments } from '../Redux/Slices/departementSlice';
-import { Icon } from '@iconify/react/dist/iconify.js';
+import { Link } from 'react-router-dom';
+import { deleteDepartments } from '../Redux/Slices/departementSlice';
+import { 
+  Plus, 
+  Trash2, 
+  Download, 
+  Upload, 
+  Search,
+  Pencil,
+  X,
+  ChevronLeft,
+  ChevronRight,
+  AlertCircle
+} from 'lucide-react';
 import Swal from 'sweetalert2';
 import api from '../config/axios';
 
 const DepartmentsListPage = () => {
-  const apiUrl = import.meta.env.VITE_API_URL;
-
   const dispatch = useDispatch();
-  const navigate = useNavigate();
   const { items: departments, status: loading, error } = useSelector((state) => state.departments);
   const [selectedDepartments, setSelectedDepartments] = useState([]);
-  const [filtersOpen, setFiltersOpen] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
   const [searchTerm, setSearchTerm] = useState('');
   const roles = useSelector((state) => state.auth.roles || []);
-  const isEmployee = roles.includes('Employe');  // Vérifie si le rôle est "EMPLOYE"
-  // useEffect(() => {
-  //   dispatch(fetchDepartments());
-  // }, [dispatch]);
+  const isEmployee = roles.includes('Employe');
 
-  // Ajouter la fonction de réinitialisation des filtres
   const resetFilters = () => {
     setSearchTerm('');
     setCurrentPage(1);
   };
 
-  const handleImportDepartments = async (e) => {
-    const file = e.target.files[0];
-  
-    if (!file) {
-      Swal.fire('Erreur!', 'Aucun fichier sélectionné.', 'error');
-      return;
-    }
-  
-    const formData = new FormData();
-    formData.append('file', file);
-  
-    try {
-      const response = await api.post(apiUrl + 'api/departements/import', formData, {
-        headers: {
-          'Content-Type': 'multipart/form-data',
-        },
-      });
-  
-      // Si succès standard (200 OK)
-      if (response.status === 200) {
-        Swal.fire('Succès!', 'Les départements ont été importés avec succès.', 'success');
-        dispatch(fetchDepartments());
-      }
-    } catch (error) {
-      const status = error?.response?.status;
-  
-      // ✅ Cas ignorés (redirection, no content, CORS sans réponse explicite)
-      if (status === 204 || status === 302 || !error.response) {
-        Swal.fire('Import réussi', 'Les départements ont été importés (avec redirection ou réponse vide).', 'success');
-        dispatch(fetchDepartments());
-      } else {
-        console.error('Erreur lors de l’importation des départements:', error);
-        Swal.fire('Erreur!', error?.response?.data?.message || 'Une erreur est survenue.', 'error');
-      }
-    }
-  };
-  
-  // Ajouter la logique de filtrage
   const filteredDepartments = departments.filter((department) => {
-    const matchesSearch = !searchTerm || 
-      department.nom.toLowerCase().includes(searchTerm.toLowerCase());
-    return matchesSearch;
+    const searchLower = searchTerm.toLowerCase();
+    return department.nom.toLowerCase().includes(searchLower);
   });
 
-  // Mise à jour des calculs de pagination pour utiliser les départements filtrés
   const indexOfLastItem = currentPage * itemsPerPage;
   const indexOfFirstItem = indexOfLastItem - itemsPerPage;
   const currentItems = filteredDepartments.slice(indexOfFirstItem, indexOfLastItem);
@@ -92,30 +55,17 @@ const DepartmentsListPage = () => {
     const maxVisiblePages = 5;
     
     if (totalPages <= maxVisiblePages) {
-      for (let i = 1; i <= totalPages; i++) {
-        pageNumbers.push(i);
-      }
+      for (let i = 1; i <= totalPages; i++) pageNumbers.push(i);
     } else {
       if (currentPage <= 3) {
-        for (let i = 1; i <= 5; i++) {
-          pageNumbers.push(i);
-        }
+        for (let i = 1; i <= 5; i++) pageNumbers.push(i);
       } else if (currentPage >= totalPages - 2) {
-        for (let i = totalPages - 4; i <= totalPages; i++) {
-          pageNumbers.push(i);
-        }
+        for (let i = totalPages - 4; i <= totalPages; i++) pageNumbers.push(i);
       } else {
-        for (let i = currentPage - 2; i <= currentPage + 2; i++) {
-          pageNumbers.push(i);
-        }
+        for (let i = currentPage - 2; i <= currentPage + 2; i++) pageNumbers.push(i);
       }
     }
-    
     return pageNumbers;
-  };
-
-  const handleEdit = (id) => {
-    navigate(`/departments/${id}/edit`);
   };
 
   const handleDelete = async (id) => {
@@ -133,28 +83,16 @@ const DepartmentsListPage = () => {
     if (result.isConfirmed) {
       try {
         await dispatch(deleteDepartments([id])).unwrap();
-        Swal.fire(
-          'Supprimé!',
-          'Le département a été supprimé avec succès.',
-          'success'
-        );
+        Swal.fire('Supprimé!', 'Le département a été supprimé avec succès.', 'success');
       } catch (error) {
-        Swal.fire(
-          'Erreur!',
-          'Une erreur est survenue lors de la suppression.',
-          'error'
-        );
+        Swal.fire('Erreur!', 'Une erreur est survenue lors de la suppression.', 'error');
       }
     }
   };
 
   const handleBulkDelete = async () => {
     if (selectedDepartments.length === 0) {
-      Swal.fire(
-        'Attention!',
-        'Veuillez sélectionner au moins un département à supprimer.',
-        'warning'
-      );
+      Swal.fire('Attention!', 'Veuillez sélectionner au moins un département à supprimer.', 'warning');
       return;
     }
 
@@ -173,52 +111,65 @@ const DepartmentsListPage = () => {
       try {
         await dispatch(deleteDepartments(selectedDepartments)).unwrap();
         setSelectedDepartments([]);
-        Swal.fire(
-          'Supprimé!',
-          'Les départements ont été supprimés avec succès.',
-          'success'
-        );
+        Swal.fire('Supprimé!', 'Les départements ont été supprimés avec succès.', 'success');
       } catch (error) {
-        Swal.fire(
-          'Erreur!',
-          'Une erreur est survenue lors de la suppression.',
-          'error'
-        );
+        Swal.fire('Erreur!', 'Une erreur est survenue lors de la suppression.', 'error');
+      }
+    }
+  };
+
+  const handleImportDepartments = async (e) => {
+    const file = e.target.files[0];
+    if (!file) {
+      Swal.fire('Erreur!', 'Aucun fichier sélectionné.', 'error');
+      return;
+    }
+
+    const formData = new FormData();
+    formData.append('file', file);
+
+    try {
+      const response = await api.post(import.meta.env.VITE_API_URL + 'api/departements/import', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      });
+
+      if (response.status === 200) {
+        Swal.fire('Succès!', 'Les départements ont été importés avec succès.', 'success');
+      }
+    } catch (error) {
+      const status = error?.response?.status;
+      if (status === 204 || status === 302 || !error.response) {
+        Swal.fire('Import réussi', 'Les départements ont été importés avec succès.', 'success');
+      } else {
+        console.error('Erreur lors de l\'importation des départements:', error);
+        Swal.fire('Erreur!', error?.response?.data?.message || 'Une erreur est survenue.', 'error');
       }
     }
   };
 
   const toggleDepartmentSelection = (id) => {
     setSelectedDepartments(prev => 
-      prev.includes(id) 
-        ? prev.filter(deptId => deptId !== id)
-        : [...prev, id]
+      prev.includes(id) ? prev.filter(deptId => deptId !== id) : [...prev, id]
     );
   };
 
   if (loading === 'loading') {
     return (
-      <div className="d-flex justify-content-center align-items-center" style={{ height: '100vh' }}>
-        <div className="spinner-border text-primary" role="status">
-          <span className="visually-hidden">Loading...</span>
-        </div>
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
       </div>
     );
   }
 
   if (error) {
     return (
-      <div className="container-fluid">
-        <div className="row">
-          <div className="col-12">
-            <div className="alert alert-danger" role="alert">
-              <div className="d-flex align-items-center">
-                <Icon icon="mdi:alert-circle" className="me-2" />
-                <div>
-                  <h5 className="alert-heading">Erreur de chargement</h5>
-                  <p className="mb-0">Une erreur est survenue lors du chargement des départements.</p>
-                </div>
-              </div>
+      <div className="p-4">
+        <div className="bg-red-50 border-l-4 border-red-500 p-4 rounded-lg">
+          <div className="flex items-center">
+            <AlertCircle className="h-5 w-5 text-red-500 mr-2" />
+            <div>
+              <h5 className="text-red-800 font-medium">Erreur de chargement</h5>
+              <p className="text-red-600">Une erreur est survenue lors du chargement des départements.</p>
             </div>
           </div>
         </div>
@@ -227,143 +178,137 @@ const DepartmentsListPage = () => {
   }
 
   return (
-    <div className="card basic-data-table">
-      {/* Header */}
-      <div className="card-header d-flex flex-column flex-md-row gap-2 justify-content-between align-items-start align-items-md-center">
-        <h5 className="card-title mb-0">Départements</h5>
+    <div className="bg-white rounded-lg shadow-sm">
+      <div className="p-6 border-b">
+        <div className="flex flex-wrap items-center justify-between gap-4">
+          <h1 className="text-xl font-semibold text-gray-800">Départements</h1>
+          
+          <div className="flex flex-wrap gap-2">
+            <Link 
+              to="/departments/add"
+              className="inline-flex items-center px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors"
+            >
+              <Plus className="h-5 w-5 mr-2" />
+              <span>Ajouter</span>
+            </Link>
 
-        <div className="d-flex flex-wrap gap-2">
-          <Link to="/departments/add" className="btn btn-primary d-flex align-items-center">
-            <Icon icon="mdi:plus" />
-            <span className="d-none d-md-inline ms-1">Ajouter</span>
-          </Link>
+            <button 
+              onClick={handleBulkDelete}
+              disabled={selectedDepartments.length === 0}
+              className="inline-flex items-center px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors disabled:opacity-50"
+            >
+              <Trash2 className="h-5 w-5 mr-2" />
+              <span>Supprimer</span>
+            </button>
 
-          <button 
-            className="btn btn-danger d-flex align-items-center"
-            onClick={handleBulkDelete}
-            disabled={selectedDepartments.length === 0}
-          >
-            <Icon icon="mdi:trash" />
-            <span className="d-none d-md-inline ms-1">Supprimer</span>
-          </button>
+            <button 
+              onClick={() => window.open(`${import.meta.env.VITE_API_URL}api/export-departements`, '_blank')}
+              className="inline-flex items-center px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+            >
+              <Download className="h-5 w-5 mr-2" />
+              <span>Export</span>
+            </button>
 
-          <button 
-  className="btn btn-outline-secondary d-flex align-items-center"
-  onClick={() => window.open(`${import.meta.env.VITE_API_URL}api/export-departements`, '_blank')}
->
-  <Icon icon="mdi:download" />
-  <span className="d-none d-md-inline ms-1">Export</span>
-</button>
-
-
-{!isEmployee && (
-          <button
-            className="btn btn-outline-secondary d-flex align-items-center"
-            onClick={() => document.getElementById('fileInput').click()}  
-          >
-            <Icon icon="mdi:upload" />
-            <span className="d-none d-md-inline ms-1">Import</span>
-          </button>
-        )}
-          <input
-            type="file"
-            id="fileInput"
-            style={{ display: 'none' }}
-            accept=".xlsx, .xls, .csv"  
-            onChange={handleImportDepartments}  
-          />
-        
-
-          <button
-            className="btn btn-outline-secondary d-inline d-md-none"
-            onClick={() => setFiltersOpen(!filtersOpen)}
-          >
-            <Icon icon="mdi:tune" />
-          </button>
-        </div>
-      </div>
-
-      <div className="card-body">
-        {/* Filters */}
-        <div className={`filters-container mb-4 ${filtersOpen ? 'd-block' : 'd-none'} d-md-block`}>
-          <div className="row g-3 align-items-center">
-            <div className="col-6 col-sm-4 col-md-3 col-lg-3">
-              <input
-                type="text"
-                className="form-control"
-                placeholder="Rechercher un département..."
-                value={searchTerm}
-                onChange={e => setSearchTerm(e.target.value)}
-              />
-            </div>
-
-            {searchTerm && (
-              <div className="col-auto">
+            {!isEmployee && (
+              <>
                 <button
-                  className="btn btn-link text-danger"
-                  onClick={resetFilters}
-                  title="Réinitialiser les filtres"
-                  style={{ padding: '6px 10px' }}
+                  onClick={() => document.getElementById('fileInput').click()}
+                  className="inline-flex items-center px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
                 >
-                  <Icon icon="mdi:close" />
+                  <Upload className="h-5 w-5 mr-2" />
+                  <span>Import</span>
                 </button>
-              </div>
+                <input
+                  type="file"
+                  id="fileInput"
+                  className="hidden"
+                  onChange={handleImportDepartments}
+                  accept=".xlsx, .xls, .csv"
+                />
+              </>
             )}
           </div>
         </div>
 
-        {/* Table */}
-        <div className="table-responsive">
-          <table className="table table-hover">
+        <div className="mt-4">
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" />
+            <input
+              type="text"
+              className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+              placeholder="Rechercher un département..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
+            {searchTerm && (
+              <button
+                onClick={resetFilters}
+                className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            )}
+          </div>
+        </div>
+      </div>
+
+      <div className="p-6">
+        <div className="overflow-x-auto">
+          <table className="w-full">
             <thead>
-              <tr>
-                <th>
+              <tr className="bg-gray-50">
+                <th className="px-6 py-3 text-left">
                   <input
                     type="checkbox"
-                    className="form-check-input"
-                    checked={selectedDepartments.length === filteredDepartments.length}
+                    className="rounded border-gray-300 text-primary-600 focus:ring-primary-500"
+                    checked={selectedDepartments.length === departments.length}
                     onChange={() => {
-                      if (selectedDepartments.length === filteredDepartments.length) {
+                      if (selectedDepartments.length === departments.length) {
                         setSelectedDepartments([]);
                       } else {
-                        setSelectedDepartments(filteredDepartments.map(d => d.id));
+                        setSelectedDepartments(departments.map(d => d.id));
                       }
                     }}
                   />
                 </th>
-                <th>Nom</th>
-                <th className="text-end">Actions</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Nom
+                </th>
+                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Actions
+                </th>
               </tr>
             </thead>
-            <tbody>
+            <tbody className="bg-white divide-y divide-gray-200">
               {currentItems.map((department) => (
-                <tr key={department.id}>
-                  <td>
+                <tr 
+                  key={department.id}
+                  className="hover:bg-gray-50 transition-colors"
+                >
+                  <td className="px-6 py-4 whitespace-nowrap">
                     <input
                       type="checkbox"
-                      className="form-check-input"
+                      className="rounded border-gray-300 text-primary-600 focus:ring-primary-500"
                       checked={selectedDepartments.includes(department.id)}
                       onChange={() => toggleDepartmentSelection(department.id)}
                     />
                   </td>
-                  <td>{department.nom}</td>
-                  <td className="text-end">
-                    <div className="d-flex justify-content-end gap-2">
-                      <button
-                        className="btn btn-sm btn-primary me-2"
-                        onClick={() => handleEdit(department.id)}
-                        title="Modifier"
-                      >
-                        <Icon icon="mdi:pencil" />
-                      </button>
-                      <button
-                        className="btn btn-sm btn-danger"
-                        onClick={() => handleDelete(department.id)}
-                        title="Supprimer"
-                      >
-                        <Icon icon="mdi:delete" />
-                      </button>
-                    </div>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <span className="text-sm text-gray-900">{department.nom}</span>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                    <Link
+                      to={`/departments/${department.id}/edit`}
+                      className="text-primary-600 hover:text-primary-900 mr-3"
+                    >
+                      <Pencil className="h-5 w-5 inline" />
+                    </Link>
+                    <button
+                      onClick={() => handleDelete(department.id)}
+                      className="text-red-600 hover:text-red-900"
+                    >
+                      <Trash2 className="h-5 w-5 inline" />
+                    </button>
                   </td>
                 </tr>
               ))}
@@ -371,47 +316,53 @@ const DepartmentsListPage = () => {
           </table>
         </div>
 
-        {/* Pagination */}
-        <div className="d-flex justify-content-between align-items-center mt-4">
-          <div className="d-flex align-items-center gap-2">
-            <span>Afficher</span>
-            <select className="form-select form-select-sm w-auto" value={itemsPerPage} onChange={handleItemsPerPageChange}>
+        <div className="mt-4 flex flex-col sm:flex-row items-center justify-between gap-4">
+          <div className="flex items-center gap-2">
+            <select
+              className="rounded-md border-gray-300 text-sm focus:ring-primary-500 focus:border-primary-500"
+              value={itemsPerPage}
+              onChange={handleItemsPerPageChange}
+            >
               <option value="5">5</option>
               <option value="10">10</option>
               <option value="25">25</option>
               <option value="50">50</option>
               <option value="all">Tous</option>
             </select>
-            <span>entrées</span>
+            <span className="text-sm text-gray-500">entrées par page</span>
           </div>
 
-          <div className="d-flex gap-2">
+          <nav className="flex items-center gap-1">
             <button
-              className="btn btn-outline-secondary btn-sm"
               onClick={() => paginate(currentPage - 1)}
               disabled={currentPage === 1}
+              className="p-2 rounded-md hover:bg-gray-100 disabled:opacity-50"
             >
-              <Icon icon="mdi:chevron-left" />
+              <ChevronLeft className="h-5 w-5" />
             </button>
-
+            
             {getPageNumbers().map((number) => (
               <button
                 key={number}
-                className={`btn btn-sm ${currentPage === number ? 'btn-primary' : 'btn-outline-secondary'}`}
                 onClick={() => paginate(number)}
+                className={`px-3 py-2 rounded-md ${
+                  currentPage === number
+                    ? 'bg-primary-600 text-white'
+                    : 'hover:bg-gray-100'
+                }`}
               >
                 {number}
               </button>
             ))}
 
             <button
-              className="btn btn-outline-secondary btn-sm"
               onClick={() => paginate(currentPage + 1)}
               disabled={currentPage === totalPages}
+              className="p-2 rounded-md hover:bg-gray-100 disabled:opacity-50"
             >
-              <Icon icon="mdi:chevron-right" />
+              <ChevronRight className="h-5 w-5" />
             </button>
-          </div>
+          </nav>
         </div>
       </div>
     </div>
