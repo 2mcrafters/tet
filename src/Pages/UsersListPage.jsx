@@ -188,7 +188,7 @@ const UsersListPage = () => {
         await dispatch(fetchUsers());
       } else {
         console.error('Erreur lors de l'importation des employés:', error);
-        Swal.fire('Erreur', error?.response?.data?.message || 'Une erreur est survenue lors de l'importation.', 'error');
+        Swal.fire('Erreur', error?.response?.data?.message || "Une erreur est survenue lors de l'importation.", 'error');
       }
     }
   };
