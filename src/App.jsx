@@ -21,7 +21,6 @@ import NotFound from './Pages/NotFound'
 import SocietesListPage from './Pages/SocietesListPage'; // Ajout de l'import pour la page des sociétés
 import TemporaireEmployesPage from './Pages/TemporaireEmployesPage'; // Ajout de l'import pour la page des sociétés
 
-import "./degrade.css"
 
 
 //fetch slices
