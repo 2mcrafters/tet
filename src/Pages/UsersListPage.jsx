@@ -12,7 +12,7 @@ const UsersListPage = () => {
   const navigate = useNavigate();
   const { items: users, status: loading, error } = useSelector((state) => state.users);
   const { items: departments } = useSelector((state) => state.departments);
-  const { user: currentUser } = useSelector((state) => state.auth); // Ajout de l'utilisateur connecté
+  const { user: currentUser } = useSelector((state) => state.auth);
   const [selectedUsers, setSelectedUsers] = useState([]);
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
@@ -22,13 +22,8 @@ const UsersListPage = () => {
   const [status, setStatus] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
   const roles = useSelector((state) => state.auth.roles || []);
-  const isEmployee = roles.includes('Employe');  // Vérifie si le rôle est "EMPLOYE"
-  // useEffect(() => {
-  //   dispatch(fetchUsers());
-  //   dispatch(fetchDepartments());
-  // }, [dispatch]);
+  const isEmployee = roles.includes('Employe');
 
-  // Ajouter la fonction de réinitialisation des filtres
   const resetFilters = () => {
     setRole('');
     setDepartment('');
@@ -37,7 +32,6 @@ const UsersListPage = () => {
     setCurrentPage(1);
   };
 
-  // Ajout de la fonction de filtrage
   const filteredUsers = users.filter((user) => {
     const searchTermLower = searchTerm.toLowerCase();
     const matchesSearch = 
@@ -53,7 +47,6 @@ const UsersListPage = () => {
     return matchesSearch && matchesRole && matchesDepartment && matchesStatus;
   });
 
-  // Mise à jour des calculs de pagination pour utiliser les utilisateurs filtrés
   const indexOfLastItem = currentPage * itemsPerPage;
   const indexOfFirstItem = indexOfLastItem - itemsPerPage;
   const currentItems = filteredUsers.slice(indexOfFirstItem, indexOfLastItem);
@@ -95,7 +88,6 @@ const UsersListPage = () => {
   };
 
   const handleEdit = (id) => {
-    // Empêcher la modification si c'est l'utilisateur connecté
     if (currentUser && currentUser.id === id) {
       Swal.fire({
         title: 'Action non autorisée',
@@ -123,28 +115,16 @@ const UsersListPage = () => {
     if (result.isConfirmed) {
       try {
         await dispatch(deleteUsers([id])).unwrap();
-        Swal.fire(
-          'Supprimé!',
-          'L\'utilisateur a été supprimé avec succès.',
-          'success'
-        );
+        Swal.fire('Supprimé!', 'L\'utilisateur a été supprimé avec succès.', 'success');
       } catch (error) {
-        Swal.fire(
-          'Erreur!',
-          'Une erreur est survenue lors de la suppression.',
-          'error'
-        );
+        Swal.fire('Erreur!', 'Une erreur est survenue lors de la suppression.', 'error');
       }
     }
   };
 
   const handleBulkDelete = async () => {
     if (selectedUsers.length === 0) {
-      Swal.fire(
-        'Attention!',
-        'Veuillez sélectionner au moins un utilisateur à supprimer.',
-        'warning'
-      );
+      Swal.fire('Attention!', 'Veuillez sélectionner au moins un utilisateur à supprimer.', 'warning');
       return;
     }
 
@@ -163,17 +143,9 @@ const UsersListPage = () => {
       try {
         await dispatch(deleteUsers(selectedUsers)).unwrap();
         setSelectedUsers([]);
-        Swal.fire(
-          'Supprimé!',
-          'Les utilisateurs ont été supprimés avec succès.',
-          'success'
-        );
+        Swal.fire('Supprimé!', 'Les utilisateurs ont été supprimés avec succès.', 'success');
       } catch (error) {
-        Swal.fire(
-          'Erreur!',
-          'Une erreur est survenue lors de la suppression.',
-          'error'
-        );
+        Swal.fire('Erreur!', 'Une erreur est survenue lors de la suppression.', 'error');
       }
     }
   };
@@ -186,9 +158,44 @@ const UsersListPage = () => {
     );
   };
 
+  const handleImport = async (e) => {
+    const file = e.target.files[0];
+    
+    if (!file) {
+      Swal.fire('Erreur', 'Veuillez sélectionner un fichier', 'error');
+      return;
+    }
+    
+    const formData = new FormData();
+    formData.append('file', file);
+    
+    try {
+      const response = await api.post('/import-employes', formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      });
+      
+      if (response.status === 200) {
+        Swal.fire('Succès', 'Fichier importé avec succès', 'success');
+        await dispatch(fetchUsers());
+      }
+    } catch (error) {
+      const status = error?.response?.status;
+      
+      if (status === 204 || status === 302 || !error.response) {
+        Swal.fire('Import réussi', 'Employés importés avec succès.', 'success');
+        await dispatch(fetchUsers());
+      } else {
+        console.error('Erreur lors de l'importation des employés:', error);
+        Swal.fire('Erreur', error?.response?.data?.message || 'Une erreur est survenue lors de l'importation.', 'error');
+      }
+    }
+  };
+
   if (loading === 'loading') {
     return (
-      <div className="d-flex justify-content-center align-items-center" style={{ height: '100vh' }}>
+      <div className="d-flex justify-content-center align-items-center min-vh-100">
         <div className="spinner-border text-primary" role="status">
           <span className="visually-hidden">Loading...</span>
         </div>
@@ -199,143 +206,112 @@ const UsersListPage = () => {
   if (error) {
     return (
       <div className="container-fluid">
-        <div className="row">
-          <div className="col-12">
-            <div className="alert alert-danger" role="alert">
-              <div className="d-flex align-items-center">
-                <Icon icon="mdi:alert-circle" className="me-2" />
-                <div>
-                  <h5 className="alert-heading">Erreur de chargement</h5>
-                  <p className="mb-0">Une erreur est survenue lors du chargement des utilisateurs.</p>
-                </div>
-              </div>
+        <div className="alert alert-danger rounded-lg shadow-sm" role="alert">
+          <div className="d-flex align-items-center">
+            <Icon icon="mdi:alert-circle" className="me-2 text-xl" />
+            <div>
+              <h5 className="alert-heading mb-1">Erreur de chargement</h5>
+              <p className="mb-0">Une erreur est survenue lors du chargement des utilisateurs.</p>
             </div>
           </div>
         </div>
       </div>
     );
   }
-  
 
-  const handleImport = async (e) => {
-    const file = e.target.files[0]; 
-  
-    if (!file) {
-      Swal.fire('Erreur', 'Veuillez sélectionner un fichier', 'error');
-      return;
-    }
-  
-    const formData = new FormData();
-    formData.append('file', file);
-  
-    try {
-      const response = await api.post('/import-employes', formData, {
-        headers: {
-          'Content-Type': 'multipart/form-data',
-        },
-      });
-  
-      // Cas normal : succès HTTP 200
-      if (response.status === 200) {
-        Swal.fire('Succès', 'Fichier importé avec succès', 'success');
-        await dispatch(fetchUsers());
-      }
-    } catch (error) {
-      const status = error?.response?.status;
-  
-      // ✅ Si le backend retourne 204 No Content ou 302 Redirect, on considère que l'import est OK
-      if (status === 204 || status === 302 || !error.response) {
-        Swal.fire('Import réussi', 'Employés importés (avec redirection ou sans réponse explicite).', 'success');
-        await dispatch(fetchUsers());
-      } else {
-        console.error('Erreur lors de l’importation des employés:', error);
-        Swal.fire('Erreur', error?.response?.data?.message || 'Une erreur est survenue lors de l’importation.', 'error');
-      }
-    }
-  };
-  
   return (
-    <div className="card basic-data-table">
-      {/* Header */}
-      <div className="card-header d-flex flex-column flex-md-row gap-2 justify-content-between align-items-start align-items-md-center">
-        <h5 className="card-title mb-0">Utilisateurs</h5>
+    <div className="card shadow-sm">
+      <div className="card-header bg-white py-3">
+        <div className="d-flex flex-wrap justify-content-between align-items-center gap-3">
+          <h5 className="card-title mb-0 text-primary">Gestion des Utilisateurs</h5>
+          <div className="d-flex flex-wrap gap-2">
+            <Link to="/users/add" className="btn btn-primary d-flex align-items-center">
+              <Icon icon="mdi:plus" className="me-1" />
+              <span className="d-none d-sm-inline">Ajouter</span>
+            </Link>
 
-        <div className="d-flex flex-wrap gap-2">
-          <Link to="/users/add" className="btn btn-primary d-flex align-items-center">
-            <Icon icon="mdi:plus" />
-            <span className="d-none d-md-inline ms-1">Ajouter</span>
-          </Link>
+            <button 
+              className="btn btn-danger d-flex align-items-center"
+              onClick={handleBulkDelete}
+              disabled={selectedUsers.length === 0}
+            >
+              <Icon icon="mdi:trash" className="me-1" />
+              <span className="d-none d-sm-inline">Supprimer</span>
+            </button>
 
-          <button 
-            className="btn btn-danger d-flex align-items-center"
-            onClick={handleBulkDelete}
-            disabled={selectedUsers.length === 0}
-          >
-            <Icon icon="mdi:trash" />
-            <span className="d-none d-md-inline ms-1">Supprimer</span>
-          </button>
+            <button 
+              className="btn btn-outline-secondary d-flex align-items-center"
+              onClick={() => window.open(`${import.meta.env.VITE_API_URL}api/export-employes`, '_blank')}
+            >
+              <Icon icon="mdi:download" className="me-1" />
+              <span className="d-none d-sm-inline">Export</span>
+            </button>
 
-          <button 
-  className="btn btn-outline-secondary d-flex align-items-center"
-  onClick={() => window.open(`${import.meta.env.VITE_API_URL}api/export-employes`, '_blank')}
->
-  <Icon icon="mdi:download" />
-  <span className="d-none d-md-inline ms-1">Export</span>
-</button>
+            {!isEmployee && (
+              <div className="position-relative">
+                <button
+                  className="btn btn-outline-secondary d-flex align-items-center"
+                  onClick={() => document.getElementById('fileInput').click()}
+                >
+                  <Icon icon="mdi:upload" className="me-1" />
+                  <span className="d-none d-sm-inline">Import</span>
+                </button>
+                <input
+                  type="file"
+                  id="fileInput"
+                  className="d-none"
+                  onChange={handleImport}
+                  accept=".csv, .xlsx"
+                />
+              </div>
+            )}
 
-          
-{!isEmployee && (     
-          <button
-            className="btn btn-outline-secondary d-flex align-items-center"
-            onClick={() => document.getElementById('fileInput').click()}
-          >
-          <Icon icon="mdi:upload" />
-          <span className="d-none d-md-inline ms-1">Import</span>
-          <input
-            type="file"
-            id="fileInput"
-            style={{ display: 'none' }}
-            onChange={handleImport}
-            accept=".csv, .xlsx"
-          />
-          </button>
-)}
-        
-
-          <button
-            className="btn btn-outline-secondary d-inline d-md-none"
-            onClick={() => setFiltersOpen(!filtersOpen)}
-          >
-            <Icon icon="mdi:tune" />
-          </button>
+            <button
+              className="btn btn-outline-secondary d-sm-none"
+              onClick={() => setFiltersOpen(!filtersOpen)}
+            >
+              <Icon icon="mdi:tune" />
+            </button>
+          </div>
         </div>
       </div>
 
       <div className="card-body">
-        {/* Filters */}
-        <div className={`filters-container mb-4 ${filtersOpen ? 'd-block' : 'd-none'} d-md-block`}>
-          <div className="row g-3 align-items-center">
-            <div className="col-6 col-sm-4 col-md-3 col-lg-2">
-              <select className="form-select" value={role} onChange={e => setRole(e.target.value)}>
-                <option value="">Rôle</option>
+        <div className={`filters-container mb-4 ${filtersOpen ? 'd-block' : 'd-none'} d-sm-block`}>
+          <div className="row g-3">
+            <div className="col-12 col-sm-6 col-md-3">
+              <select 
+                className="form-select shadow-sm" 
+                value={role} 
+                onChange={e => setRole(e.target.value)}
+              >
+                <option value="">Tous les rôles</option>
                 <option value="Employe">Employé</option>
                 <option value="Chef_Dep">Chef département</option>
                 <option value="RH">RH</option>
               </select>
             </div>
 
-            <div className="col-6 col-sm-4 col-md-3 col-lg-2">
-              <select className="form-select" value={department} onChange={e => setDepartment(e.target.value)}>
-                <option value="">Département</option>
+            <div className="col-12 col-sm-6 col-md-3">
+              <select 
+                className="form-select shadow-sm" 
+                value={department} 
+                onChange={e => setDepartment(e.target.value)}
+              >
+                <option value="">Tous les départements</option>
                 {departments.map(dept => (
                   <option key={dept.id} value={dept.id}>{dept.nom}</option>
                 ))}
               </select>
             </div>
 
-            <div className="col-6 col-sm-4 col-md-3 col-lg-2">
-              <select className="form-select" value={status} onChange={e => setStatus(e.target.value)}>
-                <option value="">Statut</option>
+            <div className="col-12 col-sm-6 col-md-3">
+              <select 
+                className="form-select shadow-sm" 
+                value={status} 
+                onChange={e => setStatus(e.target.value)}
+              >
+                <option value="">Tous les statuts</option>
                 <option value="Actif">Actif</option>
                 <option value="Inactif">Inactif</option>
                 <option value="Congé">Congé</option>
@@ -343,57 +319,56 @@ const UsersListPage = () => {
               </select>
             </div>
 
-            <div className="col-6 col-sm-4 col-md-3 col-lg-3">
-              <input
-                type="text"
-                className="form-control"
-                placeholder="Rechercher par nom ou CIN..."
-                value={searchTerm}
-                onChange={e => setSearchTerm(e.target.value)}
-              />
-            </div>
-
-            {(role || department || status || searchTerm) && (
-              <div className="col-auto">
-                <button
-                  className="btn btn-link text-danger"
-                  onClick={resetFilters}
-                  title="Réinitialiser les filtres"
-                  style={{ padding: '6px 10px' }}
-                >
-                  <Icon icon="mdi:close" />
-                </button>
+            <div className="col-12 col-sm-6 col-md-3">
+              <div className="input-group">
+                <input
+                  type="text"
+                  className="form-control shadow-sm"
+                  placeholder="Rechercher..."
+                  value={searchTerm}
+                  onChange={e => setSearchTerm(e.target.value)}
+                />
+                {(role || department || status || searchTerm) && (
+                  <button
+                    className="btn btn-outline-secondary"
+                    onClick={resetFilters}
+                    title="Réinitialiser les filtres"
+                  >
+                    <Icon icon="mdi:close" />
+                  </button>
+                )}
               </div>
-            )}
+            </div>
           </div>
         </div>
 
-        {/* Table */}
         <div className="table-responsive">
-          <table className="table table-hover">
-            <thead>
+          <table className="table table-hover align-middle">
+            <thead className="bg-light">
               <tr>
-                <th>
-                  <input
-                    type="checkbox"
-                    className="form-check-input"
-                    checked={selectedUsers.length === filteredUsers.length}
-                    onChange={() => {
-                      if (selectedUsers.length === filteredUsers.length) {
-                        setSelectedUsers([]);
-                      } else {
-                        setSelectedUsers(filteredUsers.map(u => u.id));
-                      }
-                    }}
-                  />
+                <th className="border-0">
+                  <div className="form-check">
+                    <input
+                      type="checkbox"
+                      className="form-check-input"
+                      checked={selectedUsers.length === filteredUsers.length}
+                      onChange={() => {
+                        if (selectedUsers.length === filteredUsers.length) {
+                          setSelectedUsers([]);
+                        } else {
+                          setSelectedUsers(filteredUsers.map(u => u.id));
+                        }
+                      }}
+                    />
+                  </div>
                 </th>
-                <th>Nom</th>
-                <th>Prénom</th>
-                <th>Email</th>
-                <th>Rôle</th>
-                <th>Département</th>
-                <th>Statut</th>
-                <th className="text-end">Actions</th>
+                <th className="border-0">Nom</th>
+                <th className="border-0">Prénom</th>
+                <th className="border-0">Email</th>
+                <th className="border-0">Rôle</th>
+                <th className="border-0">Département</th>
+                <th className="border-0">Statut</th>
+                <th className="border-0 text-end">Actions</th>
               </tr>
             </thead>
             <tbody>
@@ -403,25 +378,44 @@ const UsersListPage = () => {
                 return (
                   <tr key={user.id}>
                     <td>
-                      <input
-                        type="checkbox"
-                        className="form-check-input"
-                        checked={selectedUsers.includes(user.id)}
-                        onChange={() => toggleUserSelection(user.id)}
-                      />
+                      <div className="form-check">
+                        <input
+                          type="checkbox"
+                          className="form-check-input"
+                          checked={selectedUsers.includes(user.id)}
+                          onChange={() => toggleUserSelection(user.id)}
+                        />
+                      </div>
                     </td>
                     <td>{user.name}</td>
                     <td>{user.prenom}</td>
-                    <td>{user.email}</td>
-                    <td>{user.role}</td>
+                    <td>
+                      <span className="text-truncate d-inline-block" style={{maxWidth: "200px"}}>
+                        {user.email}
+                      </span>
+                    </td>
+                    <td>
+                      <span className={`badge bg-${user.role === 'RH' ? 'primary' : user.role === 'Chef_Dep' ? 'success' : 'info'}`}>
+                        {user.role}
+                      </span>
+                    </td>
                     <td>{department ? department.nom : 'Non assigné'}</td>
-                    <td>{user.statut}</td>
-                    <td className="text-end">
+                    <td>
+                      <span className={`badge bg-${
+                        user.statut === 'Actif' ? 'success' :
+                        user.statut === 'Inactif' ? 'danger' :
+                        user.statut === 'Congé' ? 'warning' :
+                        user.statut === 'Malade' ? 'info' : 'secondary'
+                      }`}>
+                        {user.statut}
+                      </span>
+                    </td>
+                    <td>
                       <div className="d-flex justify-content-end gap-2">
                         <button
-                          className={`btn btn-sm ${isCurrentUser ? 'btn-secondary' : 'btn-primary'} me-2`}
+                          className={`btn btn-sm ${isCurrentUser ? 'btn-secondary' : 'btn-primary'}`}
                           onClick={() => handleEdit(user.id)}
-                          title={isCurrentUser ? "Utilisez la page de profil pour modifier vos informations" : "Modifier"}
+                          title={isCurrentUser ? "Utilisez la page de profil" : "Modifier"}
                           disabled={isCurrentUser}
                         >
                           <Icon icon="mdi:pencil" />
@@ -442,47 +436,58 @@ const UsersListPage = () => {
           </table>
         </div>
 
-        {/* Pagination */}
-        <div className="d-flex justify-content-between align-items-center mt-4">
+        <div className="d-flex flex-column flex-md-row justify-content-between align-items-center gap-3 mt-4">
           <div className="d-flex align-items-center gap-2">
-            <span>Afficher</span>
-            <select className="form-select form-select-sm w-auto" value={itemsPerPage} onChange={handleItemsPerPageChange}>
+            <select 
+              className="form-select form-select-sm" 
+              value={itemsPerPage} 
+              onChange={handleItemsPerPageChange}
+              style={{width: 'auto'}}
+            >
               <option value="5">5</option>
               <option value="10">10</option>
               <option value="25">25</option>
               <option value="50">50</option>
               <option value="all">Tous</option>
             </select>
-            <span>entrées</span>
+            <span className="text-muted">entrées par page</span>
           </div>
 
-          <div className="d-flex gap-2">
-            <button
-              className="btn btn-outline-secondary btn-sm"
-              onClick={() => paginate(currentPage - 1)}
-              disabled={currentPage === 1}
-            >
-              <Icon icon="mdi:chevron-left" />
-            </button>
-
-            {getPageNumbers().map((number) => (
-              <button
-                key={number}
-                className={`btn btn-sm ${currentPage === number ? 'btn-primary' : 'btn-outline-secondary'}`}
-                onClick={() => paginate(number)}
-              >
-                {number}
-              </button>
-            ))}
-
-            <button
-              className="btn btn-outline-secondary btn-sm"
-              onClick={() => paginate(currentPage + 1)}
-              disabled={currentPage === totalPages}
-            >
-              <Icon icon="mdi:chevron-right" />
-            </button>
-          </div>
+          <nav aria-label="Page navigation">
+            <ul className="pagination pagination-sm mb-0">
+              <li className={`page-item ${currentPage === 1 ? 'disabled' : ''}`}>
+                <button 
+                  className="page-link" 
+                  onClick={() => paginate(currentPage - 1)}
+                  aria-label="Previous"
+                >
+                  <Icon icon="mdi:chevron-left" />
+                </button>
+              </li>
+              {getPageNumbers().map((number) => (
+                <li 
+                  key={number} 
+                  className={`page-item ${currentPage === number ? 'active' : ''}`}
+                >
+                  <button 
+                    className="page-link" 
+                    onClick={() => paginate(number)}
+                  >
+                    {number}
+                  </button>
+                </li>
+              ))}
+              <li className={`page-item ${currentPage === totalPages ? 'disabled' : ''}`}>
+                <button 
+                  className="page-link" 
+                  onClick={() => paginate(currentPage + 1)}
+                  aria-label="Next"
+                >
+                  <Icon icon="mdi:chevron-right" />
+                </button>
+              </li>
+            </ul>
+          </nav>
         </div>
       </div>
     </div>
